@@ -1,0 +1,23 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/taosupr/Programs/project788067-124510'
+ 
+mkdir -p dist
+ 
+if [ -f /usr/lib/debug/boot/vmlinux-5.11.0-49-generic ]; then \
+	echo "INFO: found dbg kernel, generating ctrace/bpf/vmlinux.h from /usr/lib/debug/boot/vmlinux-5.11.0-49-generic"; \
+	/usr/sbin/bpftool btf dump file /usr/lib/debug/boot/vmlinux-5.11.0-49-generic format c > ctrace/bpf/vmlinux.h; \
+fi
+if [ ! -f /sys/kernel/btf/vmlinux ] && [ ! -f /usr/lib/debug/boot/vmlinux-5.11.0-49-generic ]; then \
+	echo "ERROR: kernel does not seem to support BTF"; \
+	exit 1; \
+fi
+if [ ! -f ctrace/bpf/vmlinux.h ]; then \
+	echo "INFO: generating ctrace/bpf/vmlinux.h from /sys/kernel/btf/vmlinux"; \
+	/usr/sbin/bpftool btf dump file /sys/kernel/btf/vmlinux format c > ctrace/bpf/vmlinux.h; \
+fi
+clang -g -O2 -c -Wall -fpie -Wno-unused-variable -Wno-unused-function -target bpf -D__TARGET_ARCH_x86 \
+-o dist/ctrace.bpf.o ctrace/bpf/ctrace.bpf.c
+GOOS=linux cc=gcc CGO_CFLAGS="-I /usr/include/bpf" CGO_LDFLAGS="-lelf -lz -lbpf" \
+go build -v -o dist/ctrace
+make: Leaving directory '/home/taosupr/Programs/project788067-124510'
+ 
