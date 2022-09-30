@@ -1,0 +1,4 @@
+output-format: table
+perf-buffer-size: 64
+events-path: 
+errors-path: 
